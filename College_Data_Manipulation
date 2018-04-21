@@ -1,0 +1,608 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The following code will show you how to transform the data into relevancy. All categorical features will become numeric, missing data will be either dropped or appropriately replaced."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "# Import relevant modules and load your dataframe.\n",
+    "\n",
+    "import pandas as pd\n",
+    "import matplotlib.pyplot as plt\n",
+    "import numpy as np\n",
+    "from range_key_dict import RangeKeyDict\n",
+    "\n",
+    "df = pd.read_csv('/Users/Haebichan/Desktop/Harvard University Sample.csv', header = None)\n",
+    "\n",
+    "df.columns = 'gender type_of_high_school state unweighted_gpa weighted_gpa sat_math sat_reading sat_writing act_total school_ranking decision'.split()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style>\n",
+       "    .dataframe thead tr:only-child th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: left;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>gender</th>\n",
+       "      <th>type_of_high_school</th>\n",
+       "      <th>state</th>\n",
+       "      <th>unweighted_gpa</th>\n",
+       "      <th>weighted_gpa</th>\n",
+       "      <th>sat_math</th>\n",
+       "      <th>sat_reading</th>\n",
+       "      <th>sat_writing</th>\n",
+       "      <th>act_total</th>\n",
+       "      <th>school_ranking</th>\n",
+       "      <th>decision</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>Female</td>\n",
+       "      <td>Public</td>\n",
+       "      <td>CA</td>\n",
+       "      <td>3.75</td>\n",
+       "      <td>4.30</td>\n",
+       "      <td>800.0</td>\n",
+       "      <td>740.0</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>10 of 370</td>\n",
+       "      <td>Denied</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>Female</td>\n",
+       "      <td>Public</td>\n",
+       "      <td>CA</td>\n",
+       "      <td>4.00</td>\n",
+       "      <td>4.33</td>\n",
+       "      <td>770.0</td>\n",
+       "      <td>800.0</td>\n",
+       "      <td>730.0</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>7 of 598</td>\n",
+       "      <td>Accepted</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>Female</td>\n",
+       "      <td>Private</td>\n",
+       "      <td>TX</td>\n",
+       "      <td>4.00</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>750.0</td>\n",
+       "      <td>740.0</td>\n",
+       "      <td>740.0</td>\n",
+       "      <td>33.0</td>\n",
+       "      <td>13 of 252</td>\n",
+       "      <td>Denied</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>Female</td>\n",
+       "      <td>Private</td>\n",
+       "      <td>TX</td>\n",
+       "      <td>4.00</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>660.0</td>\n",
+       "      <td>800.0</td>\n",
+       "      <td>770.0</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>DR</td>\n",
+       "      <td>Wait-Listed</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>Female</td>\n",
+       "      <td>Public</td>\n",
+       "      <td>CA</td>\n",
+       "      <td>4.00</td>\n",
+       "      <td>5.00</td>\n",
+       "      <td>750.0</td>\n",
+       "      <td>750.0</td>\n",
+       "      <td>800.0</td>\n",
+       "      <td>NaN</td>\n",
+       "      <td>Top 10%</td>\n",
+       "      <td>Accepted</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   gender type_of_high_school state  unweighted_gpa  weighted_gpa  sat_math  \\\n",
+       "0  Female              Public    CA            3.75          4.30     800.0   \n",
+       "1  Female              Public    CA            4.00          4.33     770.0   \n",
+       "2  Female             Private    TX            4.00           NaN     750.0   \n",
+       "3  Female             Private    TX            4.00           NaN     660.0   \n",
+       "4  Female              Public    CA            4.00          5.00     750.0   \n",
+       "\n",
+       "   sat_reading  sat_writing  act_total school_ranking     decision  \n",
+       "0        740.0          NaN        NaN      10 of 370       Denied  \n",
+       "1        800.0        730.0        NaN       7 of 598     Accepted  \n",
+       "2        740.0        740.0       33.0      13 of 252       Denied  \n",
+       "3        800.0        770.0        NaN             DR  Wait-Listed  \n",
+       "4        750.0        800.0        NaN        Top 10%     Accepted  "
+      ]
+     },
+     "execution_count": 2,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "# Manually replace all categorical variables into cat codes.\n",
+    "\n",
+    "df.gender = df.gender.map({'Female':0, 'Male':1})\n",
+    "df.type_of_high_school = df.type_of_high_school.map({'Public':0, 'Private':1})\n",
+    "df.replace(['Accepted', 'Will Attend','Denied'], [1,1,0], inplace=True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "# Drop rows with wait-listed samples as we can't use them; there just aren't enough of them to contribute to classification prediction. \n",
+    "# Drop rows with a missing state value.\n",
+    "# Drop the unweighted_gpa column, as many are missing. Use (with caution) the .interpolate() function or a machine learning technique to fill in the missing values, if you wish. \n",
+    "\n",
+    "df = df[df.decision != 'Wait-Listed']\n",
+    "\n",
+    "df = df[df.state.notnull()]\n",
+    "\n",
+    "df.drop('weighted_gpa',1,inplace=True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "# Drop rows without SAT scores in any of the three categories. Create a column with total SAT scores. \n",
+    "# Drop total SAT scores that are too low and are many standard deviations away from the mean. \n",
+    "\n",
+    "df = df[(df['sat_writing'].notnull()) & (df['sat_math'].notnull()) & (df['sat_reading'].notnull())]\n",
+    "\n",
+    "df['sat_total'] = df.sat_math + df.sat_reading + df.sat_writing\n",
+    "df = df[(df.sat_total >= 1590) | (df.act_total >= 22)]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "# Make sure a row contains either sat_total value or the act_total value. If both values are missing, the row becomes useless.\n",
+    "\n",
+    "df = df[(df.sat_total.notnull()) | (df.act_total.notnull())]\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "# Multiply the GPA to make them into integers to summon the RangeKeyDict function (Range can't take in floats). I will return the numbers back to normal later.\n",
+    "# Another possibility is to create a separate function where the range can take in floats. This will be a little more work.\n",
+    "\n",
+    "df.unweighted_gpa = df.unweighted_gpa * 100"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "# return only rows where unweighted_gpa is not a NaN. GPA is a crucial part of the classification prediction to be left blank.\n",
+    "\n",
+    "\n",
+    "df = df[df.unweighted_gpa.notnull()]\n",
+    "\n",
+    "df.replace(['DR'], np.NaN, inplace=True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "# Create a dictionary for rankings and its corresponding gpa using the RangeKeyDict.\n",
+    "### I calculated the range manually. I took the school rankings without the 'DR', recorded all the GPA and its corresponding school ranking, and used its range as the guide for this smaller set. I then applied the ranking_dict to the missing values.\n",
+    "# Finally, return the GPA to its normal float number by division. \n",
+    "\n",
+    "ranking_dict = RangeKeyDict({\n",
+    "        (400, 401): 'Top 1%', \n",
+    "        (391, 400): 'Top 5%', \n",
+    "        (381, 391): 'Top 10%', \n",
+    "        (364, 381): 'Top 25%', \n",
+    "        (250, 364): 'Top 50%',\n",
+    "    })\n",
+    "\n",
+    "\n",
+    "df.loc[df['school_ranking'].isnull(), 'school_ranking'] = df.loc[df['school_ranking'].isnull(), 'unweighted_gpa'].apply(lambda x: ranking_dict[x])\n",
+    "\n",
+    "df.unweighted_gpa = df.unweighted_gpa / 100 "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/Users/Haebichan/anaconda3/lib/python3.6/site-packages/ipykernel_launcher.py:29: SettingWithCopyWarning: \n",
+      "A value is trying to be set on a copy of a slice from a DataFrame\n",
+      "\n",
+      "See the caveats in the documentation: http://pandas.pydata.org/pandas-docs/stable/indexing.html#indexing-view-versus-copy\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Not all rankings are stated as \"Top X%\" - in fact, these rankings are a minority. Most are written as \"X out of Y\".\n",
+    "# Transform these \"X out of Y\" rankings as \"Top X%\" by iterating through the column and transforming strings into percentages.\n",
+    "# Then, map these percentages into the \"Top X%\" string format. \n",
+    "# Finally, manually transform these \"Top X%\" strings into numeric cat codes.\n",
+    "\n",
+    "for index, row in df['school_ranking'].items():\n",
+    "    row = str(row)\n",
+    "    if 'of' not in row:\n",
+    "        pass\n",
+    "    else:\n",
+    "        target_word = ['of']\n",
+    "        numbers = row.split()\n",
+    "        result_word = [word for word in numbers if word not in target_word]\n",
+    "        division = int(result_word[0]) / int(result_word[1])\n",
+    "        division = float(division)\n",
+    "        \n",
+    "        if 0.25 < division < 0.50:\n",
+    "            division = 'Top 50%'\n",
+    "        elif 0.10 < division < 0.25:\n",
+    "            division = 'Top 25%'\n",
+    "        elif 0.05 < division < 0.10:\n",
+    "            division = 'Top 10%'\n",
+    "        elif 0.015 < division <= 0.05:\n",
+    "            division = 'Top 5%'\n",
+    "        elif division <= 0.015:\n",
+    "            division = 'Top 1%'\n",
+    "        else:\n",
+    "            pass\n",
+    "        df['school_ranking'][index] = division\n",
+    "\n",
+    "df = df.replace(['Top 1%','Top 5%', 'Top 10%', 'Top 25%', 'Top 50%'], [0,1,2,3,4])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "# Create two dictionaries for rows with missing SAT and ACT scores. The first dictionary will be mapped onto rows without SAT scores. The missing scores will be given by converting the ACT scores given the first dictionary. The opposite effect will take place to the converse situation using the second dictionary. \n",
+    "\n",
+    "score_dict = {36: 2390, 35:2330, 34: 2260, 33: 2170, 32: 2110, 31: 2040, 30: 1990, 29: 1920, 28: 1850, 27: 1810, 26: 1760, 25: 1700, 24: 1650, 23: 1590}\n",
+    "\n",
+    "score_dict2 = RangeKeyDict({\n",
+    "    (2380,2401): 36, (2290,2371): 35, (2220,2281): 34, (2140,2211): 33, \n",
+    "    (2080,2131): 32, (2020,2071): 31, (1980,2011): 30, (1920,1971): 29,\n",
+    "    (1860,1911): 28, (1800,1851): 27, (1740,1791): 26, (1680,1731): 25, \n",
+    "    (1620,1671): 24, (1560,1611): 23, \n",
+    "})\n",
+    "\n",
+    "df.loc[df['act_total'].isnull(), 'act_total'] = df.loc[df['act_total'].isnull(),'sat_total'].apply(lambda x: score_dict2[x])\n",
+    "df.loc[df['sat_total'].isnull(), 'sat_total'] = df.loc[df['sat_total'].isnull(),'act_total'].apply(lambda x: score_dict[x])\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Input the State of the University in question in its acronym \n",
+      " > MA\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/Users/Haebichan/anaconda3/lib/python3.6/site-packages/ipykernel_launcher.py:12: SettingWithCopyWarning: \n",
+      "A value is trying to be set on a copy of a slice from a DataFrame\n",
+      "\n",
+      "See the caveats in the documentation: http://pandas.pydata.org/pandas-docs/stable/indexing.html#indexing-view-versus-copy\n",
+      "  if sys.path[0] == '':\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Take in an input from the user on the acronym of the state of the university in question. Since the example here is Harvard University, the user will type 'MA' (Massachusetts), which will be replaced with the word 'In-State'. All other acronyms will be made turned into 'Out-of-State' string.\n",
+    "        \n",
+    "name_of_state = input('Input the State of the University in question in its acronym \\n > ')\n",
+    "\n",
+    "for index, row in df.state.items():\n",
+    "    if row == name_of_state:\n",
+    "        row = row.replace(name_of_state, 'In-State')\n",
+    "    elif row != name_of_state:\n",
+    "        row = row.replace(row, 'Out-of-State')\n",
+    "    else:\n",
+    "        pass\n",
+    "    df.state[index] = row"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "# Manually cat code the strings.\n",
+    "\n",
+    "df.state.replace({'In-State': 0, 'Out-of-State': 1}, inplace=True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "df.reset_index(inplace=True)\n",
+    "df.drop('index',1,inplace=True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style>\n",
+       "    .dataframe thead tr:only-child th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: left;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>gender</th>\n",
+       "      <th>type_of_high_school</th>\n",
+       "      <th>state</th>\n",
+       "      <th>unweighted_gpa</th>\n",
+       "      <th>sat_math</th>\n",
+       "      <th>sat_reading</th>\n",
+       "      <th>sat_writing</th>\n",
+       "      <th>act_total</th>\n",
+       "      <th>school_ranking</th>\n",
+       "      <th>decision</th>\n",
+       "      <th>sat_total</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>1</td>\n",
+       "      <td>4.00</td>\n",
+       "      <td>770.0</td>\n",
+       "      <td>800.0</td>\n",
+       "      <td>730.0</td>\n",
+       "      <td>35.0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>1</td>\n",
+       "      <td>2300.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>0</td>\n",
+       "      <td>1</td>\n",
+       "      <td>1</td>\n",
+       "      <td>4.00</td>\n",
+       "      <td>750.0</td>\n",
+       "      <td>740.0</td>\n",
+       "      <td>740.0</td>\n",
+       "      <td>33.0</td>\n",
+       "      <td>2</td>\n",
+       "      <td>0</td>\n",
+       "      <td>2230.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>1</td>\n",
+       "      <td>4.00</td>\n",
+       "      <td>750.0</td>\n",
+       "      <td>750.0</td>\n",
+       "      <td>800.0</td>\n",
+       "      <td>35.0</td>\n",
+       "      <td>2</td>\n",
+       "      <td>1</td>\n",
+       "      <td>2300.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>1</td>\n",
+       "      <td>4.00</td>\n",
+       "      <td>700.0</td>\n",
+       "      <td>710.0</td>\n",
+       "      <td>750.0</td>\n",
+       "      <td>34.0</td>\n",
+       "      <td>1</td>\n",
+       "      <td>0</td>\n",
+       "      <td>2160.0</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>1</td>\n",
+       "      <td>3.74</td>\n",
+       "      <td>620.0</td>\n",
+       "      <td>640.0</td>\n",
+       "      <td>670.0</td>\n",
+       "      <td>29.0</td>\n",
+       "      <td>2</td>\n",
+       "      <td>0</td>\n",
+       "      <td>1930.0</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   gender  type_of_high_school  state  unweighted_gpa  sat_math  sat_reading  \\\n",
+       "0       0                    0      1            4.00     770.0        800.0   \n",
+       "1       0                    1      1            4.00     750.0        740.0   \n",
+       "2       0                    0      1            4.00     750.0        750.0   \n",
+       "3       0                    0      1            4.00     700.0        710.0   \n",
+       "4       0                    0      1            3.74     620.0        640.0   \n",
+       "\n",
+       "   sat_writing  act_total school_ranking  decision  sat_total  \n",
+       "0        730.0       35.0              0         1     2300.0  \n",
+       "1        740.0       33.0              2         0     2230.0  \n",
+       "2        800.0       35.0              2         1     2300.0  \n",
+       "3        750.0       34.0              1         0     2160.0  \n",
+       "4        670.0       29.0              2         0     1930.0  "
+      ]
+     },
+     "execution_count": 15,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "df.to_csv('/dataset/Processed Harvard Data.csv')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.6.3"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
