@@ -10,3 +10,5 @@ All data was collected here: https://www.collegedata.com/cs/admissions/admission
 
 ![alt text](https://raw.githubusercontent.com/haebichan/Predict-College-Acceptance/master/ROC.png)
 
+
+![alt text](https://raw.githubusercontent.com/haebichan/Predict-College-Acceptance/master/example%20of%20results.png)
