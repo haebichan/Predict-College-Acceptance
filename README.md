@@ -8,4 +8,5 @@ The second notebook will demonstrate how to adjust settings on machine learning 
 
 All data was collected here: https://www.collegedata.com/cs/admissions/admissions_tracker.jhtml. 
 
+![alt text](https://raw.githubusercontent.com/haebichan/Predict-College-Acceptance/master/ROC.png)
 
